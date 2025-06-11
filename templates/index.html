@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Office Cam | Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT"
+      crossorigin="anonymous"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body class="">
+    <nav
+      class="navbar bg-dark navbar-expand-lg bg-body-tertiary"
+      data-bs-theme="dark"
+    >
+      <div class="container">
+        <a class="navbar-brand"><strong>Office Cam</strong></a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="/dashboard"
+                >Dashboard</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/history">History</a>
+            </li>
+          </ul>
+          <div class="d-flex" role="search">
+            <a class="btn btn-danger" href="/logout"> Logout </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container py-4">
+      <h2 class="text-center mb-4"><strong>DASHBOARD PENGAWASAN KANTOR</strong></h2>
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <div class="card bg-primary text-white">
+            <div class="card-body">
+              <h5>Jumlah Orang Sekarang</h5>
+              <p class="card-text display-6" id="current-count">{{ count }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 stat-card">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <h5 class="card-title">Total Orang Terdeteksi</h5>
+              <p class="card-text display-6" id="total-count">{{ total }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card bg-secondary text-white">
+            <div class="card-body">
+              <h5>ID & Durasi (detik)</h5>
+              <ul id="duration-list" class="list-group list-group-flush"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center">
+        <img
+          src="{{ url_for('video_feed') }}"
+          class="img-fluid rounded shadow"
+        />
+      </div>
+
+      <div class="text-center mt-4">
+        <h3 class="mt-5">Grafik Orang Masuk per Hari</h3>
+        <canvas id="peopleChart" class="shadow-lg bg-white rounded p-3"></canvas>
+      </div>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      function loadChart() {
+        $.getJSON("/grafik_data", function (data) {
+          new Chart(document.getElementById("peopleChart"), {
+            type: "line",
+            data: {
+              labels: data.labels,
+              datasets: [
+                {
+                  label: "Jumlah Orang Masuk",
+                  data: data.values,
+                  borderColor: "rgba(75, 192, 192, 1)",
+                  backgroundColor: "rgba(75, 192, 192, 0.2)",
+                  fill: true,
+                  tension: 0.1,
+                },
+              ],
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  precision: 0,
+                },
+              },
+            },
+          });
+        });
+      }
+      loadChart();
+    </script>
+
+    <script>
+      function updateDashboard() {
+        $.getJSON("/get_status", function (data) {
+          $("#current-count").text(data.count);
+          $("#total-count").text(data.total);
+
+          let durationList = "";
+          for (let id in data.durations) {
+            let sec = data.durations[id];
+            let m = Math.floor(sec / 60);
+            let s = Math.floor(sec % 60);
+            durationList += `<li>ID ${id}: ${m} menit ${s} detik</li>`;
+          }
+          $("#duration-list").html(durationList);
+        });
+      }
+      setInterval(updateDashboard, 3000);
+      updateDashboard();
+    </script>
+  </body>
+</html>
